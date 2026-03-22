@@ -1,0 +1,22 @@
+{
+  "name": "İnfüzyon Hesaplayıcı",
+  "short_name": "İnfüzyon",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f3f7ff",
+  "theme_color": "#f3f7ff",
+  "lang": "tr",
+  "description": "İnfüzyon dozunu mcg/kg/dk olarak hesaplayan PWA.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
