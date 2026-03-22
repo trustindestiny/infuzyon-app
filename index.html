@@ -2,14 +2,10 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#f3f7ff" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="İnfüzyon" />
   <title>İnfüzyon Hesaplayıcı</title>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icon-180.png" />
+
   <style>
     :root {
       --bg: #f3f7ff;
@@ -22,19 +18,30 @@
       --shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
       --radius: 22px;
     }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       min-height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial, sans-serif;
     }
+
     body {
-      padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)) 16px;
+      padding: 16px;
     }
-    .wrap { max-width: 520px; margin: 0 auto; }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -42,18 +49,20 @@
       box-shadow: var(--shadow);
       overflow: hidden;
     }
+
     .top {
-      padding: 22px 18px 18px;
+      padding: 22px;
       background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
       border-bottom: 1px solid var(--border);
     }
+
     .title {
-      margin: 0 0 8px 0;
+      margin: 0 0 10px 0;
       font-size: 24px;
       font-weight: 800;
-      letter-spacing: -0.4px;
       text-align: center;
     }
+
     .result-box {
       background: var(--accent-soft);
       border: 1px solid #c8d9ff;
@@ -61,108 +70,139 @@
       padding: 16px;
       text-align: center;
     }
-    .result-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
+
     .result {
-      font-size: clamp(28px, 7vw, 38px);
+      font-size: 34px;
       font-weight: 900;
       color: var(--accent);
-      line-height: 1.1;
-      word-break: break-word;
     }
+
     .sub {
-      margin-top: 10px;
+      margin-top: 8px;
       font-size: 13px;
       color: var(--muted);
-      line-height: 1.45;
-      min-height: 18px;
     }
-    .content { padding: 18px; display: grid; gap: 14px; }
-    .field { display: grid; gap: 7px; }
-    label { font-size: 14px; font-weight: 800; }
+
+    .content {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
     input {
-      width: 100%;
-      appearance: none;
-      -webkit-appearance: none;
+      padding: 14px;
+      border-radius: 14px;
       border: 1px solid var(--border);
-      border-radius: 16px;
-      background: #fff;
-      color: var(--text);
-      padding: 15px 16px;
       font-size: 18px;
-      line-height: 1.2;
-      outline: none;
     }
+
     input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+      outline: none;
     }
-    .hint, .install-box {
+
+    .hint {
       font-size: 12px;
       color: var(--muted);
-      line-height: 1.45;
       background: #f8fafc;
+      border-radius: 12px;
+      padding: 10px;
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
     }
+
+    /* PREMIUM FOOTER */
     .footer-note {
       text-align: center;
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 14px;
+      margin-top: 25px;
     }
-    @media (min-width: 700px) { body { display: grid; place-items: center; } }
+
+    .signature-line {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #2563eb, transparent);
+      margin: 20px auto 12px;
+    }
+
+    .footer-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+    }
+
+    .footer-rights {
+      font-size: 11px;
+      margin-top: 6px;
+      color: #94a3b8;
+    }
+
+    .footer-mail {
+      font-size: 12px;
+      margin-top: 6px;
+      color: #475569;
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
+
     <div class="card">
       <div class="top">
         <h1 class="title">İnfüzyon Hesaplayıcı</h1>
+
         <div class="result-box">
-          <div class="result-label">Sonuç</div>
           <div class="result" id="result">—</div>
-          <div class="sub" id="sub">Tüm alanları doldurunca otomatik hesaplanır.</div>
+          <div class="sub" id="sub">Değerleri gir</div>
         </div>
       </div>
 
       <div class="content">
-        <div class="install-box">
-          iPhone: sayfayı aç → Paylaş → Ana Ekrana Ekle
+
+        <div class="field">
+          <label>İlaç (mg)</label>
+          <input id="mg" type="number" placeholder="4">
         </div>
 
         <div class="field">
-          <label for="mg">İlaç miktarı (mg)</label>
-          <input id="mg" type="number" inputmode="decimal" step="any" placeholder="Örn: 4" />
+          <label>Hız (mL/saat)</label>
+          <input id="rate" type="number" placeholder="5">
         </div>
 
         <div class="field">
-          <label for="rate">İnfüzyon hızı (mL/saat)</label>
-          <input id="rate" type="number" inputmode="decimal" step="any" placeholder="Örn: 5" />
+          <label>Kilo (kg)</label>
+          <input id="kg" type="number" placeholder="70">
         </div>
 
         <div class="field">
-          <label for="kg">Hasta kilosu (kg)</label>
-          <input id="kg" type="number" inputmode="decimal" step="any" placeholder="Örn: 70" />
-        </div>
-
-        <div class="field">
-          <label for="vol">Toplam hacim (mL)</label>
-          <input id="vol" type="number" inputmode="decimal" step="any" value="50" />
+          <label>Toplam hacim (mL)</label>
+          <input id="vol" type="number" value="50">
         </div>
 
         <div class="hint">
-          Formül: [(mg × 1000) / mL] × (mL/saat) / (kg × 60)
+          mcg/kg/dk = [(mg × 1000) / mL] × (mL/saat) / (kg × 60)
         </div>
+
       </div>
     </div>
 
-    <div class="footer-note">PWA · çevrimdışı çalışır · ana ekrana eklenebilir</div>
+    <!-- PREMIUM SIGNATURE -->
+    <div class="footer-note">
+      <div class="signature-line"></div>
+      <div class="footer-name">Dr. Gökhan Karataş</div>
+      <div class="footer-rights">© 2026 All Rights Reserved</div>
+      <div class="footer-mail">dr.gokhankaratas@gmail.com</div>
+    </div>
+
   </div>
 
   <script>
@@ -173,46 +213,27 @@
     const result = document.getElementById('result');
     const sub = document.getElementById('sub');
 
-    function tr(num, digits) {
-      return Number(num).toLocaleString('tr-TR', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: digits
-      });
-    }
-
     function calc() {
       const m = parseFloat(mg.value);
       const r = parseFloat(rate.value);
       const k = parseFloat(kg.value);
       const v = parseFloat(vol.value);
 
-      if ([m, r, k, v].some(x => Number.isNaN(x))) {
-        result.textContent = '—';
-        sub.textContent = 'Tüm alanları doldurunca otomatik hesaplanır.';
+      if ([m,r,k,v].some(x => isNaN(x))) {
+        result.innerText = "—";
         return;
       }
 
-      if (m <= 0 || r < 0 || k <= 0 || v <= 0) {
-        result.textContent = '—';
-        sub.textContent = 'Geçerli pozitif değerler girin.';
-        return;
-      }
+      const mcgml = (m * 1000) / v;
+      const mch = mcgml * r;
+      const final = mch / (k * 60);
 
-      const mcgPerMl = (m * 1000) / v;
-      const mcgPerHour = mcgPerMl * r;
-      const final = mcgPerHour / (k * 60);
-
-      result.textContent = tr(final, 4) + ' mcg/kg/dk';
-      sub.textContent = 'Konsantrasyon: ' + tr(mcgPerMl, 2) + ' mcg/mL · Verilen doz: ' + tr(mcgPerHour, 2) + ' mcg/saat';
+      result.innerText = final.toFixed(4) + " mcg/kg/dk";
+      sub.innerText = "Kons: " + mcgml.toFixed(2) + " mcg/mL";
     }
 
-    [mg, rate, kg, vol].forEach(el => el.addEventListener('input', calc));
-    window.addEventListener('pageshow', calc);
-    calc();
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
-    }
+    [mg,rate,kg,vol].forEach(e => e.addEventListener("input", calc));
   </script>
+
 </body>
 </html>
