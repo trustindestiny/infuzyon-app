@@ -1,4 +1,4 @@
-const CACHE_NAME = 'infuzyon-pwa-v2';
+const CACHE_NAME = 'infuzyon-pwa-v3';
 const URLS_TO_CACHE = [
   './',
   './index.html',
