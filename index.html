@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KOPENHAG">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#C60C30">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kopenhag Google Maps Rota</title>
+<style>
+:root {
+  --bg:#f6f7f9; --card:#ffffff; --text:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --blue:#2563eb; --freebg:#ecfdf5; --freetx:#166534; --paidbg:#fff7ed; --paidtx:#9a3412;
+  --foodbg:#fff1f2; --foodline:#fda4af; --foodtext:#9f1239; --foodchip:#ffe4e6;
+  --wikibg:#eef2ff; --wikiline:#c7d2fe; --wikitext:#3730a3;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; padding:24px; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+.wrap { max-width:980px; margin:0 auto; }
+.card {
+  background:var(--card); border:1px solid var(--line); border-radius:24px; padding:22px;
+  margin-bottom:18px; box-shadow:0 10px 28px rgba(17,24,39,.05);
+}
+h1 { margin:0 0 8px; font-size:28px; }
+h2 { margin:0 0 12px; font-size:18px; }
+p { margin:0 0 10px; color:var(--muted); line-height:1.55; }
+.btn {
+  display:inline-block; margin-top:8px; padding:14px 18px; border-radius:14px;
+  background:var(--blue); color:#fff; text-decoration:none; font-weight:700;
+}
+.route {
+  margin-top:14px; padding:14px; border-radius:16px; border:1px dashed #cbd5e1; background:#f9fafb;
+}
+.small { font-size:13px; color:var(--muted); line-height:1.6; word-break:break-word; }
+.notice {
+  margin-top:12px; padding:12px 14px; border-radius:14px; background:#eff6ff; border:1px solid #bfdbfe;
+  color:#374151; font-size:13px; line-height:1.5;
+}
+.legend {
+  display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;
+}
+.legend .tag {
+  display:inline-flex; align-items:center; padding:7px 11px; border-radius:999px;
+  border:1px solid var(--line); font-size:12px; font-weight:700; background:#fff;
+}
+.legend .tag.food {
+  background:var(--foodchip); border-color:var(--foodline); color:var(--foodtext);
+}
+.legend .tag.wiki {
+  background:var(--wikibg); border-color:var(--wikiline); color:var(--wikitext);
+}
+.list { display:flex; flex-direction:column; gap:10px; }
+.item {
+  display:flex; gap:12px; align-items:flex-start; border:1px solid var(--line);
+  border-radius:18px; padding:14px; background:#fff;
+}
+.food-row {
+  background:var(--foodbg);
+  border-color:var(--foodline);
+}
+input[type="checkbox"] {
+  width:22px; height:22px; margin-top:2px; accent-color:#2563eb;
+}
+.content { flex:1; }
+.top { display:flex; gap:6px; align-items:flex-start; }
+.num { min-width:24px; color:var(--muted); font-weight:700; }
+.wikilink {
+  font-weight:700; color:var(--text); text-decoration:none;
+}
+.wikilink:hover { text-decoration:underline; }
+.meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center; }
+.chip {
+  display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px;
+  border:1px solid var(--line); font-size:12px; font-weight:700; background:#fff;
+}
+.category.food-cat {
+  background:var(--foodchip); color:var(--foodtext); border-color:var(--foodline);
+}
+.free { background:var(--freebg); color:var(--freetx); border-color:#bbf7d0; }
+.paid { background:var(--paidbg); color:var(--paidtx); border-color:#fed7aa; }
+.maplink {
+  display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px;
+  border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8; text-decoration:none; font-size:12px; font-weight:700;
+}
+.toast {
+  position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+  background:#111827; color:#fff; padding:10px 14px; border-radius:999px; font-size:13px;
+  box-shadow:0 8px 20px rgba(0,0,0,.18); opacity:0; pointer-events:none; transition:opacity .2s ease;
+}
+.toast.show { opacity:1; }
+
+.extra-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+.extra-group {
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:14px;
+  background:#fbfcff;
+}
+.extra-group h3 {
+  margin:0 0 10px;
+  font-size:16px;
+}
+.extra-items {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.extra-item {
+  border:1px solid #eceff5;
+  border-radius:14px;
+  background:#fff;
+  padding:10px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.extra-type {
+  display:inline-flex;
+  align-self:flex-start;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  background:var(--foodchip);
+  color:var(--foodtext);
+  border:1px solid var(--foodline);
+}
+
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="card" style="text-align:center;">
+      <h1 style="margin-bottom:4px;">Gökhan KARATAŞ</h1>
+      <p style="margin-bottom:0;">Kopenhag gezi planı</p>
+    </div>
+
+    <div class="card">
+      <h1>Kopenhag • Google Maps yürüyüş rotası</h1>
+      <p>Mekan adının üstüne basınca artık <strong>İngilizce Wikipedia</strong> açılır ve altta kısa bir bilgilendirme çıkar.</p>
+      <a class="btn" href="https://www.google.com/maps/dir/?api=1&origin=Next%20House%20Copenhagen%2C%20Bernstorffsgade%2027%2C%20Copenhagen&destination=Tivoli%20Gardens%2C%20Copenhagen&travelmode=walking&waypoints=Rug%20Bakery%2C%20Tietgensgade%2039%2C%20Copenhagen%7CNyhavn%2C%20Copenhagen%7CCoffee%20Collective%20Bernikow%2C%20Bremerholm%2033%2C%20Copenhagen%7CBuka%20Bakery%2C%20Frederiksberggade%2021%2C%20Copenhagen%7CAmalienborg%20Palace%2C%20Copenhagen%7CFrederik%27s%20Church%2C%20Copenhagen%7CNyboder%2C%20Copenhagen%7CKastellet%2C%20Copenhagen%7CThe%20Little%20Mermaid%2C%20Copenhagen" target="_blank" rel="noopener">Ana Google Maps rotası</a>
+      <div class="route">
+        <div><strong>Tam rota sırası</strong></div>
+        <div class="small">Next House Copenhagen → Rug → Nyhavn → Coffee Collective → Buka → Amalienborg Sarayı → Frederik Kilisesi → Nyboder → Kastellet → Küçük Deniz Kızı → The King's Garden → Rosenborg Kalesi → Hart → Rundetårn → Gråbrødretorv → Pistolstræde → Strøget → Nybrogade → Magstræde → Christiansborg Sarayı → Thorvaldsens Museum → Det Kgl. Bibliotek, The Royal Library → Christiania → Papirøen → The Cosmic Room → Lille Bakery → Ørstedsparken → Gasoline Grill → Tivoli Bahçeleri</div>
+      </div>
+      <div class="legend">
+        <span class="tag">Normal durak</span>
+        <span class="tag food">Kafe / Yemek durağı</span>
+        <span class="tag wiki">Başlığa tıkla = English Wikipedia</span>
+      </div>
+      <div class="notice">
+        Bazı yerlerin birebir İngilizce Wikipedia sayfası olmayabilir. O durumda İngilizce Wikipedia arama sonuçları açılır.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Checklist</h2><div class="card">
+      <h2>Checklist</h2>
+      <div class="list">
+        
+<label class="item">
+  <input type="checkbox" data-key="cp-1">
+  <div class="content">
+    <div class="top">
+      <span class="num">1.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Next%20House%20Copenhagen" target="_blank" rel="noopener" data-info="Next House Copenhagen • Otel • Konaklama • English Wikipedia opens in a new tab.">Next House Copenhagen</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Otel</span>
+      <span class="chip paid">Konaklama</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Next%20House%20Copenhagen%2C%20Bernstorffsgade%2027%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item food-row">
+  <input type="checkbox" data-key="cp-2">
+  <div class="content">
+    <div class="top">
+      
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Rug%20Bakery" target="_blank" rel="noopener" data-info="Rug • Kafe / Bakery • Ücretli • English Wikipedia opens in a new tab.">Rug</a>
+    </div>
+    <div class="meta">
+      <span class="chip category food-cat">Kafe / Bakery</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Rug%20Bakery%2C%20Tietgensgade%2039%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-3">
+  <div class="content">
+    <div class="top">
+      <span class="num">2.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Nyhavn" target="_blank" rel="noopener" data-info="Nyhavn • Liman / Semt • Ücretsiz • English Wikipedia opens in a new tab.">Nyhavn</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Liman / Semt</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Nyhavn%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item food-row">
+  <input type="checkbox" data-key="cp-4">
+  <div class="content">
+    <div class="top">
+      
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Coffee%20Collective" target="_blank" rel="noopener" data-info="Coffee Collective • Kafe / Coffee • Ücretli • English Wikipedia opens in a new tab.">Coffee Collective</a>
+    </div>
+    <div class="meta">
+      <span class="chip category food-cat">Kafe / Coffee</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Coffee%20Collective%20Bernikow%2C%20Bremerholm%2033%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item food-row">
+  <input type="checkbox" data-key="cp-5">
+  <div class="content">
+    <div class="top">
+      
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Buka%20Bakery" target="_blank" rel="noopener" data-info="Buka • Kafe / Bakery • Ücretli • English Wikipedia opens in a new tab.">Buka</a>
+    </div>
+    <div class="meta">
+      <span class="chip category food-cat">Kafe / Bakery</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Buka%20Bakery%2C%20Frederiksberggade%2021%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-6">
+  <div class="content">
+    <div class="top">
+      <span class="num">3.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Amalienborg%20Palace" target="_blank" rel="noopener" data-info="Amalienborg Sarayı • Saray • Dış alan ücretsiz • English Wikipedia opens in a new tab.">Amalienborg Sarayı</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Saray</span>
+      <span class="chip free">Dış alan ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Amalienborg%20Palace%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-7">
+  <div class="content">
+    <div class="top">
+      <span class="num">4.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Frederik%27s%20Church" target="_blank" rel="noopener" data-info="Frederik Kilisesi • Kilise • Ücretsiz • English Wikipedia opens in a new tab.">Frederik Kilisesi</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Kilise</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Frederik%27s%20Church%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-8">
+  <div class="content">
+    <div class="top">
+      <span class="num">5.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Nyboder" target="_blank" rel="noopener" data-info="Nyboder • Mahalle / Tarihi Konut Bölgesi • Ücretsiz • English Wikipedia opens in a new tab.">Nyboder</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Mahalle / Tarihi Konut Bölgesi</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Nyboder%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-9">
+  <div class="content">
+    <div class="top">
+      <span class="num">6.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Kastellet%2C%20Copenhagen" target="_blank" rel="noopener" data-info="Kastellet • Hisar / Park • Ücretsiz • English Wikipedia opens in a new tab.">Kastellet</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Hisar / Park</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Kastellet%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-10">
+  <div class="content">
+    <div class="top">
+      <span class="num">7.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=The%20Little%20Mermaid%20%28statue%29" target="_blank" rel="noopener" data-info="Küçük Deniz Kızı • Heykel • Ücretsiz • English Wikipedia opens in a new tab.">Küçük Deniz Kızı</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Heykel</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=The%20Little%20Mermaid%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-11">
+  <div class="content">
+    <div class="top">
+      <span class="num">8.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Rosenborg%20Castle%20Gardens" target="_blank" rel="noopener" data-info="The King's Garden • Bahçe / Park • Ücretsiz • English Wikipedia opens in a new tab.">The King's Garden</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Bahçe / Park</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=The%20King%27s%20Garden%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-12">
+  <div class="content">
+    <div class="top">
+      <span class="num">9.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Rosenborg%20Castle" target="_blank" rel="noopener" data-info="Rosenborg Kalesi • Kale / Müze • Ücretli • English Wikipedia opens in a new tab.">Rosenborg Kalesi</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Kale / Müze</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Rosenborg%20Castle%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item food-row">
+  <input type="checkbox" data-key="cp-13">
+  <div class="content">
+    <div class="top">
+      
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Hart%20Bageri" target="_blank" rel="noopener" data-info="Hart • Kafe / Bakery • Ücretli • English Wikipedia opens in a new tab.">Hart</a>
+    </div>
+    <div class="meta">
+      <span class="chip category food-cat">Kafe / Bakery</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Hart%20Bageri%2C%20Gammel%20M%C3%B8nt%204%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-14">
+  <div class="content">
+    <div class="top">
+      <span class="num">10.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Round%20Tower" target="_blank" rel="noopener" data-info="Rundetårn • Kule / Gözlem Noktası • Ücretli • English Wikipedia opens in a new tab.">Rundetårn</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Kule / Gözlem Noktası</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Round%20Tower%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-15">
+  <div class="content">
+    <div class="top">
+      <span class="num">11.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Gr%C3%A5br%C3%B8dretorv" target="_blank" rel="noopener" data-info="Gråbrødretorv • Meydan • Ücretsiz • English Wikipedia opens in a new tab.">Gråbrødretorv</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Meydan</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Gr%C3%A5br%C3%B8dretorv%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-16">
+  <div class="content">
+    <div class="top">
+      <span class="num">12.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Pistolstr%C3%A6de" target="_blank" rel="noopener" data-info="Pistolstræde • Sokak • Ücretsiz • English Wikipedia opens in a new tab.">Pistolstræde</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Sokak</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Pistolstr%C3%A6de%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-17">
+  <div class="content">
+    <div class="top">
+      <span class="num">13.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Str%C3%B8get" target="_blank" rel="noopener" data-info="Strøget • Cadde / Alışveriş Bölgesi • Ücretsiz • English Wikipedia opens in a new tab.">Strøget</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Cadde / Alışveriş Bölgesi</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Str%C3%B8get%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-18">
+  <div class="content">
+    <div class="top">
+      <span class="num">14.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Nybrogade" target="_blank" rel="noopener" data-info="Nybrogade • Sokak • Ücretsiz • English Wikipedia opens in a new tab.">Nybrogade</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Sokak</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Nybrogade%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-19">
+  <div class="content">
+    <div class="top">
+      <span class="num">15.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Magstr%C3%A6de" target="_blank" rel="noopener" data-info="Magstræde • Tarihi Sokak • Ücretsiz • English Wikipedia opens in a new tab.">Magstræde</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Tarihi Sokak</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Magstr%C3%A6de%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-20">
+  <div class="content">
+    <div class="top">
+      <span class="num">16.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Christiansborg%20Palace" target="_blank" rel="noopener" data-info="Christiansborg Sarayı • Saray / Tarihi Yapı • Dış alan ücretsiz • English Wikipedia opens in a new tab.">Christiansborg Sarayı</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Saray / Tarihi Yapı</span>
+      <span class="chip free">Dış alan ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Christiansborg%20Palace%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-21">
+  <div class="content">
+    <div class="top">
+      <span class="num">17.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Thorvaldsens%20Museum" target="_blank" rel="noopener" data-info="Thorvaldsens Museum • Müze • Ücretli • English Wikipedia opens in a new tab.">Thorvaldsens Museum</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Müze</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Thorvaldsens%20Museum%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-22">
+  <div class="content">
+    <div class="top">
+      <span class="num">18.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Royal%20Danish%20Library" target="_blank" rel="noopener" data-info="Det Kgl. Bibliotek, The Royal Library • Kütüphane • Ücretsiz • English Wikipedia opens in a new tab.">Det Kgl. Bibliotek, The Royal Library</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Kütüphane</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=The%20Royal%20Library%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-23">
+  <div class="content">
+    <div class="top">
+      <span class="num">19.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Freetown%20Christiania" target="_blank" rel="noopener" data-info="Christiania • Semt / Alternatif Bölge • Ücretsiz • English Wikipedia opens in a new tab.">Christiania</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Semt / Alternatif Bölge</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Freetown%20Christiania%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-24">
+  <div class="content">
+    <div class="top">
+      <span class="num">20.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Papir%C3%B8en" target="_blank" rel="noopener" data-info="Papirøen • Ada / Bölge • Ücretsiz • English Wikipedia opens in a new tab.">Papirøen</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Ada / Bölge</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Papir%C3%B8en%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-25">
+  <div class="content">
+    <div class="top">
+      <span class="num">21.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=The%20Cosmic%20Room" target="_blank" rel="noopener" data-info="The Cosmic Room • Sanat / Enstalasyon • Ücretli olabilir • English Wikipedia opens in a new tab.">The Cosmic Room</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Sanat / Enstalasyon</span>
+      <span class="chip paid">Ücretli olabilir</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=The%20Cosmic%20Room%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item food-row">
+  <input type="checkbox" data-key="cp-26">
+  <div class="content">
+    <div class="top">
+      
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Lille%20Bakery" target="_blank" rel="noopener" data-info="Lille Bakery • Kafe / Bakery • Ücretli • English Wikipedia opens in a new tab.">Lille Bakery</a>
+    </div>
+    <div class="meta">
+      <span class="chip category food-cat">Kafe / Bakery</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Lille%20Bakery%2C%20Refshalevej%20213B%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-27">
+  <div class="content">
+    <div class="top">
+      <span class="num">22.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=%C3%98rstedsparken" target="_blank" rel="noopener" data-info="Ørstedsparken • Park • Ücretsiz • English Wikipedia opens in a new tab.">Ørstedsparken</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Park</span>
+      <span class="chip free">Ücretsiz</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=%C3%98rstedsparken%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item food-row">
+  <input type="checkbox" data-key="cp-28">
+  <div class="content">
+    <div class="top">
+      
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Gasoline%20Grill" target="_blank" rel="noopener" data-info="Gasoline Grill • Burger / Yemek • Ücretli • English Wikipedia opens in a new tab.">Gasoline Grill</a>
+    </div>
+    <div class="meta">
+      <span class="chip category food-cat">Burger / Yemek</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Gasoline%20Grill%20Tivoli%20Gardens%2C%20Vesterbrogade%203%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+<label class="item">
+  <input type="checkbox" data-key="cp-29">
+  <div class="content">
+    <div class="top">
+      <span class="num">23.</span>
+      <a class="wikilink" href="https://en.wikipedia.org/w/index.php?search=Tivoli%20Gardens" target="_blank" rel="noopener" data-info="Tivoli Bahçeleri • Tema Parkı / Bahçe • Ücretli • English Wikipedia opens in a new tab.">Tivoli Bahçeleri</a>
+    </div>
+    <div class="meta">
+      <span class="chip category">Tema Parkı / Bahçe</span>
+      <span class="chip paid">Ücretli</span>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Tivoli%20Gardens%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+  </div>
+</label>
+
+      </div>
+    </div>
+
+
+    
+    <div class="card">
+      <h2>Ekstra</h2>
+      <p>Yazdığın tüm yeme-içme ve bar mekanlarını aşağıda bölgeye göre topladım. Her birinin yanında Google Maps linki var.</p>
+
+      <h3 style="margin:18px 0 8px;">Yeme-İçme</h3>
+      <div class="extra-grid">
+        <section class="extra-group"><h3>Langelinie / Østerbro</h3><div class="extra-items">
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Langelinekaj 48</strong>
+            <span class="extra-type">Konum / Yemek</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Langelinekaj%2048%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+</div></section><section class="extra-group"><h3>Indre By / Center</h3><div class="extra-items">
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">BUKA</strong>
+            <span class="extra-type">Bakery / Patisserie</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Buka%20Bakery%2C%20Frederiksberggade%2021%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Gasoline Grill</strong>
+            <span class="extra-type">Burger / Yemek</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Gasoline%20Grill%20Tivoli%20Gardens%2C%20Vesterbrogade%203%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Hungry Dane Burgers</strong>
+            <span class="extra-type">Burger / Yemek</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Hungry%20Dane%20Burgers%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Hart Bakery</strong>
+            <span class="extra-type">Bakery / Patisserie</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Hart%20Bageri%2C%20Gammel%20M%C3%B8nt%204%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Atelier September</strong>
+            <span class="extra-type">Cafe / Brunch</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Atelier%20September%2C%20Gothersgade%2030%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Rug Bakery</strong>
+            <span class="extra-type">Bakery / Patisserie</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Rug%20Bakery%2C%20Tietgensgade%2039%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Coffee Collective Bernikow</strong>
+            <span class="extra-type">Coffee</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Coffee%20Collective%20Bernikow%2C%20Bremerholm%2033%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">DØP</strong>
+            <span class="extra-type">Hot Dog / Street Food</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=D%C3%98P%2C%20K%C3%B8bmagergade%2052%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">MAX Burgers</strong>
+            <span class="extra-type">Burger / Yemek</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=MAX%20Burgers%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+</div></section><section class="extra-group"><h3>Frederiksstaden</h3><div class="extra-items">
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Apotek 57</strong>
+            <span class="extra-type">Cafe / Bakery</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Apotek%2057%2C%20Fredericiagade%2057%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+</div></section><section class="extra-group"><h3>Refshaleøen</h3><div class="extra-items">
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">POPL Burger</strong>
+            <span class="extra-type">Burger / Yemek</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=POPL%2C%20Strandgade%20108%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Lille Bakery</strong>
+            <span class="extra-type">Bakery / Patisserie</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Lille%20Bakery%2C%20Refshalevej%20213B%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">La Banchina</strong>
+            <span class="extra-type">Cafe / Bar / Deniz Kenarı</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=La%20Banchina%2C%20Refshalevej%20141A%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+</div></section>
+      </div>
+
+      <h3 style="margin:18px 0 8px;">Bar</h3>
+      <div class="extra-grid">
+        <section class="extra-group"><h3>Indre By / Center</h3><div class="extra-items">
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">The Dubliner</strong>
+            <span class="extra-type">Pub / Irish Bar</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=The%20Dubliner%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Ruby</strong>
+            <span class="extra-type">Cocktail Bar</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Ruby%2C%20Nybrogade%2010%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">No Stress Bar</strong>
+            <span class="extra-type">Cocktail Bar</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=No%20Stress%20Bar%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Taphouse</strong>
+            <span class="extra-type">Beer Bar</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Taphouse%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Charlie’s Bar</strong>
+            <span class="extra-type">Beer Bar / Pub</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Charlie%27s%20Bar%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">BrewPub Copenhagen</strong>
+            <span class="extra-type">Brewery / Pub</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=BrewPub%20Copenhagen%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+
+        <div class="extra-item">
+          <div class="extra-item-top">
+            <strong class="extra-name">Balderdash</strong>
+            <span class="extra-type">Cocktail Bar</span>
+          </div>
+          <a class="extra-map" href="https://www.google.com/maps/search/?api=1&query=Balderdash%2C%20Copenhagen" target="_blank" rel="noopener">Google Maps</a>
+        </div>
+        
+</div></section>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const prefix = "copenhagen-google-route-v10-";
+document.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => {
+  const key = prefix + (cb.dataset.key || i);
+  cb.checked = localStorage.getItem(key) === "1";
+  cb.addEventListener("change", () => {
+    localStorage.setItem(key, cb.checked ? "1" : "0");
+  });
+});
+
+const toast = document.getElementById("toast");
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+document.querySelectorAll('.wikilink').forEach(link => {
+  link.addEventListener('click', () => {
+    const info = link.getAttribute('data-info') || 'English Wikipedia opens in a new tab.';
+    showToast(info);
+  });
+});
+</script>
+</body>
+</html>
